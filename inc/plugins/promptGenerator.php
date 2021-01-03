@@ -10,11 +10,7 @@ if(defined('THIS_SCRIPT'))
 {
     global $templatelist;
 
-    if(THIS_SCRIPT== 'index.php')
-    {
-        $templatelist .= ',promptGenerator_reply';
-    }
-    elseif(THIS_SCRIPT== 'showthread.php')
+    if(in_array(THIS_SCRIPT, array('showthread.php', 'newreply.php')))
     {
         $templatelist .= ',promptGenerator_reply';
     }
@@ -26,7 +22,7 @@ if(defined('IN_ADMINCP'))
 }
 else
 {
-    $plugins->add_hook('postbit', 'promptGenerator_reply');
+    $plugins->add_hook('newreply_start', 'promptGenerator_reply');
 }
 
 
@@ -130,7 +126,14 @@ function promptGenerator_activate()
         </thead>
         <tbody>
             <tr>
-                <input type="button" class="promptGeneratorButton">Generate</input>
+                <td class="trow1">
+                    <input 
+                        type="button" 
+                        class="promptGeneratorButton" 
+                        onclick="handlePromptGeneratorClick()"
+                        value="Generate"></input>
+                    <span id="promptGenerator_output"></span>
+                </td>
             </tr>
         </tbody>
     </table><br/>';
@@ -253,7 +256,21 @@ function promptGenerator_deactivate()
 function promptGenerator_reply(&$post)
 {
     global $settings; //TODO
-    global $lang, $templates;
+    global $lang, $templates, $promptGenerator_reply;
 
-    
+    if(!isset($lang->promptGenerator))
+    {
+        $lang->load('promptGenerator');
+    }
+
+    // Generate button handling JavaScript on the fly
+    $js = '
+    <script type="text/javascript">
+        function handlePromptGeneratorClick(){
+            document.getElementById("promptGenerator_output").innerHTML = "Charlie is kewl!";
+        }
+    </script>';
+    echo htmlspecialchars_decode($js, ENT_NOQUOTES);
+
+    $promptGenerator_reply = eval($templates->render('promptGenerator_reply'));
 }
