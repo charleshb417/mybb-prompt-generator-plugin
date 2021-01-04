@@ -130,7 +130,7 @@ function promptGenerator_activate()
                     <input 
                         type="button" 
                         class="promptGeneratorButton" 
-                        onclick="handlePromptGeneratorClick()"
+                        onclick="promptGenerator.handlePromptGeneratorClick()"
                         value="Generate"></input>
                     <span id="promptGenerator_output"></span>
                 </td>
@@ -256,21 +256,43 @@ function promptGenerator_deactivate()
 function promptGenerator_reply(&$post)
 {
     global $settings; //TODO
-    global $lang, $templates, $promptGenerator_reply;
+    global $db, $lang, $templates, $promptGenerator_reply;
 
     if(!isset($lang->promptGenerator))
     {
         $lang->load('promptGenerator');
     }
 
-    // Generate button handling JavaScript on the fly
-    $js = '
-    <script type="text/javascript">
-        function handlePromptGeneratorClick(){
-            document.getElementById("promptGenerator_output").innerHTML = "Charlie is kewl!";
-        }
-    </script>';
-    echo htmlspecialchars_decode($js, ENT_NOQUOTES);
+    $query = $db->simple_select('prompt_generator', 'prompt', '', array('order_by' => 'pid', 'order_dir' => 'DESC'));
 
-    $promptGenerator_reply = eval($templates->render('promptGenerator_reply'));
+    if ($db->num_rows($query)){
+        // Generate button handling JavaScript on the fly
+        $js = '
+        <script type="text/javascript">
+            let promptGenerator = (function(){
+                let self = this;
+                let prompts = [];';
+
+        while($prompt = $db->fetch_field($query, 'prompt'))
+        {
+            $prompt = htmlspecialchars_uni($prompt);
+            $js .= 'prompts.push("' . $prompt . '");';
+        }
+
+        $js .=  'this.handlePromptGeneratorClick = function(){
+                    if (prompts.length > 0){
+                        const i = prompts[Math.floor(Math.random() * prompts.length)];
+                        document.getElementById("promptGenerator_output").innerHTML = i;   
+                    } else {
+                        // This should never happen
+                        document.getElementById("promptGenerator_output").innerHTML = "No prompts exist yet! Let an admin know that you need inspiration.";
+                    }
+                }
+                return self;
+            })();
+        </script>';
+
+        echo htmlspecialchars_decode($js, ENT_NOQUOTES);
+        $promptGenerator_reply = eval($templates->render('promptGenerator_reply'));
+    }
 }
