@@ -83,13 +83,60 @@ if ( $mybb->input['action'] == 'add')
 elseif ( $mybb->input['action'] == 'edit')
 {
 	if ($mybb->input['pid']){
-		
+		$pid = $mybb->input['pid'];
+		$query = $db->simple_select("prompt_generator", "*", "pid='{$pid}'");
+		$prompt = $db->fetch_array($query);
 
-		// $query = $db->simple_select("forums", "*", "fid='{$mybb->input['pid']}'");
-	// $forum = $db->fetch_array($query);
+		// Does the forum not exist?
+		if(!$prompt['pid'])
+		{
+			flash_message($lang->promptGenerator_error_invalid, 'error');
+			admin_redirect("index.php?module=promptGenerator");
+		}
+		else {
+			if($mybb->request_method == "post")
+			{
+				if(!trim($mybb->input['prompt']))
+				{
+					$errors[] = $lang->promptGenerator_error_missing_title;
+				}
+				else
+				{
+					// trim excess whitespace
+					$p = trim($mybb->input['prompt']);
 
-		flash_message($lang->promptGenerator_delete_success, 'success');
-		admin_redirect("index.php?module=promptGenerator");
+					// replace newlines with spaces
+					$p = trim(preg_replace('/\s\s+/', ' ', $p));
+
+					if (strlen($p) > 2048){
+						$errors[] = $lang->promptGenerator_error_too_long;
+					}
+
+					if($errors)
+					{
+						$page->output_inline_error($errors);
+						$forum_data = $mybb->input;
+					}
+
+					$db->update_query("prompt_generator", array("prompt"=>$p), "pid='{$mybb->input['pid']}'");
+
+					flash_message($lang->promptGenerator_edit_success, 'success');
+					admin_redirect("index.php?module=promptGenerator");
+
+				}
+			}
+
+			$form = new Form("index.php?module=promptGenerator&amp;action=edit", "post");
+			echo $form->generate_hidden_field("pid", $pid);
+
+			$form_container = new FormContainer($lang->promptGenerator_edit);
+			$form_container->output_row($lang->promptGenerator_header_prompt, "", $form->generate_text_area('prompt', $prompt['prompt'], array('id' => 'prompt', 'maxlength' => 2048)), 'prompt');
+			$form_container->end();
+
+			$buttons[] = $form->generate_submit_button($lang->promptGenerator_submit_button);
+			$form->output_submit_wrapper($buttons);
+			$form->end();
+		}
 	}
 	else
 	{

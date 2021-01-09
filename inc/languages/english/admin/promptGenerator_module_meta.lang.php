@@ -3,6 +3,7 @@
 $l['setting_group_promptGenerator'] = 'Prompt Generator';
 $l['setting_group_promptGenerator_desc'] = 'Settings for Prompt Generator Plugin.';
 $l['promptGenerator_add'] = 'Add Prompt';
+$l['promptGenerator_edit'] = 'Edit Prompt';
 
 $l['promptGenerator_submit_button'] = 'Submit Prompt';
 
