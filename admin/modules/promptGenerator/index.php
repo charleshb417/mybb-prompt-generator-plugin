@@ -80,18 +80,68 @@ if ( $mybb->input['action'] == 'add')
 	$form->end();
 
 }
+elseif ( $mybb->input['action'] == 'edit')
+{
+	if ($mybb->input['pid']){
+		
+
+		// $query = $db->simple_select("forums", "*", "fid='{$mybb->input['pid']}'");
+	// $forum = $db->fetch_array($query);
+
+		flash_message($lang->promptGenerator_delete_success, 'success');
+		admin_redirect("index.php?module=promptGenerator");
+	}
+	else
+	{
+		flash_message($lang->promptGenerator_error_missing_id, 'error');
+		admin_redirect("index.php?module=promptGenerator");
+	}
+}
+elseif ( $mybb->input['action'] == 'delete')
+{
+	if ($mybb->input['pid']){
+		$query = $db->simple_select("prompt_generator", "*", "pid='{$mybb->input['pid']}'");
+		$prompt = $db->fetch_array($query);
+
+		// Does the forum not exist?
+		if(!$prompt['pid'])
+		{
+			flash_message($lang->promptGenerator_error_invalid, 'error');
+			admin_redirect("index.php?module=promptGenerator");
+		}
+		else {
+			$db->delete_query('prompt_generator', "pid='{$mybb->input['pid']}'");	
+			flash_message($lang->promptGenerator_delete_success, 'success');
+			admin_redirect("index.php?module=promptGenerator");
+		}
+	}
+	else
+	{
+		flash_message($lang->promptGenerator_error_missing_id, 'error');
+		admin_redirect("index.php?module=promptGenerator");
+	}
+	
+}
 elseif(!$mybb->input['action'])
 {
 	$table = new Table;
-	$table->construct_header($lang->promptGenerator_header_prompt, array("colspan" => 1));
+	$table->construct_header($lang->promptGenerator_header_prompt, array("colspan" => 4));
 
-	$query = $db->simple_select('prompt_generator', 'prompt', '', array('order_by' => 'pid', 'order_dir' => 'DESC'));
+	$query = $db->simple_select('prompt_generator', '*', '', array('order_by' => 'pid', 'order_dir' => 'DESC'));
 
 	if($db->num_rows($query))
 	{
-		while($prompt = $db->fetch_field($query, 'prompt'))
+		while($row = $db->fetch_array($query))
         {
-            $table->construct_cell($prompt);
+            $table->construct_cell($row['prompt']);
+
+            $pid = $row['pid'];
+
+            $editLink = '<a href="index.php?module=promptGenerator&amp;action=edit&amp;pid=' . $pid . '">Edit</a>';
+            $deleteLink = '<a href="index.php?module=promptGenerator&amp;action=delete&amp;pid=' . $pid . '">Delete</a>';
+
+            $table->construct_cell($editLink);
+            $table->construct_cell($deleteLink);
 			$table->construct_row();
         }
 	} else {
