@@ -16,17 +16,9 @@ if(defined('THIS_SCRIPT'))
     }
 }
 
-if(defined('IN_ADMINCP'))
-{
-    // TO DO
-}
-else
-{
-    $plugins->add_hook('newthread_start', 'promptGenerator_reply');
-    $plugins->add_hook('newreply_start', 'promptGenerator_reply');
-    $plugins->add_hook('showthread_start', 'promptGenerator_reply');
-}
-
+$plugins->add_hook('newthread_start', 'promptGenerator_reply');
+$plugins->add_hook('newreply_start', 'promptGenerator_reply');
+$plugins->add_hook('showthread_start', 'promptGenerator_reply');
 
 function promptGenerator_info()
 {
