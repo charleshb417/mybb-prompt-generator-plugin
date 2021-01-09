@@ -40,7 +40,7 @@ function promptGenerator_info()
         "guid"          => "",
         "codename"      => "promptGenerator",
         "compatibility" => "*"
-    );
+        );
 }
 
 function promptGenerator_install()
@@ -56,25 +56,25 @@ function promptGenerator_install()
         switch($db->type)
         {
             case "pgsql":
-                $db->write_query("CREATE TABLE ".TABLE_PREFIX."prompt_generator (
-                    pid serial,
-                    prompt varchar(2048) NOT NULL default '',
-                    PRIMARY KEY (pid)
+            $db->write_query("CREATE TABLE ".TABLE_PREFIX."prompt_generator (
+                pid serial,
+                prompt varchar(2048) NOT NULL default '',
+                PRIMARY KEY (pid)
                 );");
-                break;
+            break;
             case "sqlite":
-                $db->write_query("CREATE TABLE ".TABLE_PREFIX."prompt_generator (
-                    pid INTEGER PRIMARY KEY,
-                    prompt varchar(2048) NOT NULL default ''
+            $db->write_query("CREATE TABLE ".TABLE_PREFIX."prompt_generator (
+                pid INTEGER PRIMARY KEY,
+                prompt varchar(2048) NOT NULL default ''
                 );");
-                break;
+            break;
             default:
-                $db->write_query("CREATE TABLE ".TABLE_PREFIX."prompt_generator (
-                    pid int unsigned NOT NULL auto_increment,
-                    prompt varchar(2048) NOT NULL default '',
-                    PRIMARY KEY (pid)
+            $db->write_query("CREATE TABLE ".TABLE_PREFIX."prompt_generator (
+                pid int unsigned NOT NULL auto_increment,
+                prompt varchar(2048) NOT NULL default '',
+                PRIMARY KEY (pid)
                 ) ENGINE=MyISAM{$collation};");
-                break;
+            break;
         }
     }
 }
@@ -116,38 +116,38 @@ function promptGenerator_activate()
     // promptGenerator_reply HTML
     $replyHTML = '<br\>
     <table border="0" 
-        cellspacing="{$theme[\'borderwidth\']}" 
-        cellpadding="{$theme[\'tablespace\']}" 
-        class="tborder">
-        <thead>
-            <tr>
-                <td class="thead">
-                    <strong>{$lang->promptGenerator}</strong>
-                </td>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="trow1">
-                    <input 
-                        type="button" 
-                        class="promptGeneratorButton" 
-                        onclick="promptGenerator.handlePromptGeneratorClick()"
-                        value="Generate"></input>
-                    <span id="promptGenerator_output"></span>
-                </td>
-            </tr>
-        </tbody>
+    cellspacing="{$theme[\'borderwidth\']}" 
+    cellpadding="{$theme[\'tablespace\']}" 
+    class="tborder">
+    <thead>
+    <tr>
+    <td class="thead">
+    <strong>{$lang->promptGenerator}</strong>
+    </td>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+    <td class="trow1">
+    <input 
+    type="button" 
+    class="promptGeneratorButton" 
+    onclick="promptGenerator.handlePromptGeneratorClick()"
+    value="Generate"></input>
+    <span id="promptGenerator_output"></span>
+    </td>
+    </tr>
+    </tbody>
     </table><br/>';
 
     $templateArray = array(
         'reply' => $replyHTML
-    );
+        );
 
     $group = array(
         'prefix' => $db->escape_string('promptGenerator'),
         'title' => $db->escape_string('Prompt Generator')
-    );
+        );
 
     // Update or create template group:
     $query = $db->simple_select('templategroups', 'prefix', "prefix='{$group['prefix']}'");
@@ -206,7 +206,7 @@ function promptGenerator_activate()
             'version' => 1,
             'sid' => -2,
             'dateline' => TIME_NOW
-        );
+            );
 
         // Update
         if(isset($templates[$name]))
@@ -271,30 +271,30 @@ function promptGenerator_reply(&$post)
         // Generate button handling JavaScript on the fly
         $js = '
         <script type="text/javascript">
-            let promptGenerator = (function(){
-                let self = this;
-                let prompts = [];';
+        let promptGenerator = (function(){
+            let self = this;
+            let prompts = [];';
 
-        while($prompt = $db->fetch_field($query, 'prompt'))
-        {
-            $prompt = htmlspecialchars_uni($prompt);
-            $js .= 'prompts.push("' . $prompt . '");';
-        }
+            while($prompt = $db->fetch_field($query, 'prompt'))
+            {
+                $prompt = htmlspecialchars_uni($prompt);
+                $js .= 'prompts.push("' . $prompt . '");';
+            }
 
-        $js .=  'this.handlePromptGeneratorClick = function(){
-                    if (prompts.length > 0){
-                        const i = prompts[Math.floor(Math.random() * prompts.length)];
-                        document.getElementById("promptGenerator_output").innerHTML = i;   
-                    } else {
+            $js .=  'this.handlePromptGeneratorClick = function(){
+                if (prompts.length > 0){
+                    const i = prompts[Math.floor(Math.random() * prompts.length)];
+                    document.getElementById("promptGenerator_output").innerHTML = i;   
+                } else {
                         // This should never happen
-                        document.getElementById("promptGenerator_output").innerHTML = "No prompts exist yet! Let an admin know that you need inspiration.";
-                    }
+                    document.getElementById("promptGenerator_output").innerHTML = "No prompts exist yet! Let an admin know that you need inspiration.";
                 }
-                return self;
-            })();
-        </script>';
+            }
+            return self;
+        })();
+</script>';
 
-        echo htmlspecialchars_decode($js, ENT_NOQUOTES);
-        $promptGenerator_reply = eval($templates->render('promptGenerator_reply'));
-    }
+echo htmlspecialchars_decode($js, ENT_NOQUOTES);
+$promptGenerator_reply = eval($templates->render('promptGenerator_reply'));
+}
 }

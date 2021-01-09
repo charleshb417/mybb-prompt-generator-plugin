@@ -22,13 +22,13 @@ $sub_tabs['promptGenerator'] = array(
 	'title' => $lang->promptGenerator_breadcrumb,
 	'link' => "index.php?module=promptGenerator",
 	'description' => $lang->setting_group_promptGenerator_desc
-);
+	);
 
 $sub_tabs['add_forum'] = array(
-		'title' => $lang->promptGenerator_add,
-		'link' => "index.php?module=promptGenerator&amp;action=add",
-		'description' => $lang->add_forum_desc
-);
+	'title' => $lang->promptGenerator_add,
+	'link' => "index.php?module=promptGenerator&amp;action=add",
+	'description' => $lang->add_forum_desc
+	);
 
 $page->output_nav_tabs($sub_tabs, 'edit_mod');
 
@@ -57,7 +57,7 @@ if ( $mybb->input['action'] == 'add')
 		{
 			$insert_array = array(
 				"prompt" => $db->escape_string($p)
-			);
+				);
 
 			$pid = $db->insert_query("prompt_generator", $insert_array);
 			flash_message($lang->promptGenerator_add_success, 'success');
@@ -179,18 +179,18 @@ elseif(!$mybb->input['action'])
 	if($db->num_rows($query))
 	{
 		while($row = $db->fetch_array($query))
-        {
-            $table->construct_cell($row['prompt']);
+		{
+			$table->construct_cell($row['prompt']);
 
-            $pid = $row['pid'];
+			$pid = $row['pid'];
 
-            $editLink = '<a href="index.php?module=promptGenerator&amp;action=edit&amp;pid=' . $pid . '">Edit</a>';
-            $deleteLink = '<a href="index.php?module=promptGenerator&amp;action=delete&amp;pid=' . $pid . '">Delete</a>';
+			$editLink = '<a href="index.php?module=promptGenerator&amp;action=edit&amp;pid=' . $pid . '">Edit</a>';
+			$deleteLink = '<a href="index.php?module=promptGenerator&amp;action=delete&amp;pid=' . $pid . '">Delete</a>';
 
-            $table->construct_cell($editLink);
-            $table->construct_cell($deleteLink);
+			$table->construct_cell($editLink);
+			$table->construct_cell($deleteLink);
 			$table->construct_row();
-        }
+		}
 	} else {
 		$table->construct_cell("There aren't any prompts yet!");
 		$table->construct_row();

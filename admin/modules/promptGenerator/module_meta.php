@@ -42,7 +42,7 @@ function promptGenerator_action_handler($action)
 
 	$actions = array(
 		'promptGenerator' => array('active' => 'promptGenerator', 'file' => 'index.php')
-	);
+		);
 
 	if(!isset($actions[$action]))
 	{
@@ -83,7 +83,7 @@ function promptGenerator_action_handler($action)
 				"username" => $mybb->user['username'],
 				"ip" => $user["ip"],
 				"type" => $user_type
-			);
+				);
 		}
 		else
 		{
@@ -101,7 +101,7 @@ function promptGenerator_action_handler($action)
 				$online_admins[$user['uid']] = array(
 					"ip" => $user['ip'],
 					"type" => $user_type
-				);
+					);
 			}
 
 			$query = $db->simple_select("users", "uid, username", "uid IN(".implode(',', $uid_in).")", array('order_by' => 'username'));
@@ -112,7 +112,7 @@ function promptGenerator_action_handler($action)
 					"username" => $user['username'],
 					"ip" => $online_admins[$user['uid']]['ip'],
 					"type" => $online_admins[$user['uid']]['type']
-				);
+					);
 				unset($online_admins[$user['uid']]);
 			}
 		}
