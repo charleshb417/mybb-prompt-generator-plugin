@@ -4,8 +4,6 @@ A random prompt generator plugin for MyBB.
 ## How to Install
 
 1)  Copy the appropriate files over. From the root directory of the project:
-
-    `cp -r admin/ <mybb_location>/admin/`
     
     `cp -r inc/ <mybb_location>/inc/`
     
@@ -29,3 +27,12 @@ A random prompt generator plugin for MyBB.
 9) This will add a "Generate" button that picks a random prompt from the database. This button will not be show unless there is at least one prompt in the database.
 
 10) Feel free to style to your liking. The css class is "promptGeneratorButton".
+
+## How to edit in ModCP
+
+1) Add the navlink template to the modcp_nav_forums_post template.
+
+2) The code to add the template is
+` {$promptGenerator_navlink} `
+
+3) This should place a navigation link for "Prompt Generator" in the ModCP. This page will allow you to view, create, edit, and delete prompts.
