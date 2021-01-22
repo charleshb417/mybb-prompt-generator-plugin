@@ -4,8 +4,11 @@ A random prompt generator plugin for MyBB.
 ## How to Install
 
 1)  Copy the appropriate files over. From the root directory of the project:
+
     `cp -r admin/ <mybb_location>/admin/`
+    
     `cp -r inc/ <mybb_location>/inc/`
+    
 2) Go to the AdminCP Home page. Click "Plugins" on the sidebar.
 3) There should be a "Random Prompt Generator" option. Click "Install and Activate".
 
