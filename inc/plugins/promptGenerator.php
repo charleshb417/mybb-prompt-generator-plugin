@@ -14,11 +14,19 @@ if(defined('THIS_SCRIPT'))
     {
         $templatelist .= ',promptGenerator_reply';
     }
+
+    if(in_array(THIS_SCRIPT, array('modcp.php')))
+    {
+        $templatelist .= ',promptGenerator_navlink';
+    }
+
 }
 
 $plugins->add_hook('newthread_start', 'promptGenerator_reply');
 $plugins->add_hook('newreply_start', 'promptGenerator_reply');
 $plugins->add_hook('showthread_start', 'promptGenerator_reply');
+$plugins->add_hook('modcp_nav', 'promptGenerator_modcp_link');
+
 
 function promptGenerator_info()
 {
@@ -108,32 +116,68 @@ function promptGenerator_activate()
     // promptGenerator_reply HTML
     $replyHTML = '<br\>
     <table border="0" 
-    cellspacing="{$theme[\'borderwidth\']}" 
-    cellpadding="{$theme[\'tablespace\']}" 
-    class="tborder">
-    <thead>
-    <tr>
-    <td class="thead">
-    <strong>{$lang->promptGenerator}</strong>
-    </td>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-    <td class="trow1">
-    <input 
-    type="button" 
-    class="promptGeneratorButton" 
-    onclick="promptGenerator.handlePromptGeneratorClick()"
-    value="Generate"></input>
-    <span id="promptGenerator_output"></span>
-    </td>
-    </tr>
-    </tbody>
+        cellspacing="{$theme[\'borderwidth\']}" 
+        cellpadding="{$theme[\'tablespace\']}" 
+        class="tborder">
+        <thead>
+            <tr>
+                <td class="thead">
+                    <strong>{$lang->promptGenerator}</strong>
+                </td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="trow1">
+                    <input 
+                        type="button" 
+                        class="promptGeneratorButton" 
+                        onclick="promptGenerator.handlePromptGeneratorClick()"
+                        value="Generate">
+                    </input>
+                    <span id="promptGenerator_output"></span>
+                </td>
+            </tr>
+        </tbody>
     </table><br/>';
 
+    $navlinkHTML = '<tr>
+     <td class="trow1 smalltext"><a href="modcp.php?action=promptGenerator" class="modcp_nav_item">Prompt Generator</a></td>
+    </tr>';
+
+    $modcpContentHTML = '
+    <html>
+        <head>
+            <title>Prompt Generator</title>
+            {$headerinclude}
+        </head>
+        <body>
+            {$header}
+            <table width="100%" border="0" align="center">
+                <tr>
+                {$modcp_nav}
+                    <td valign="top">
+                        <div class="promptGeneratorLinkGroup">
+                            <a href="/modcp.php?action=promptGenerator" class="promptGeneratorLink">Prompt List</a>
+                            <a href="/modcp.php?action=promptGenerator&do=create" class="promptGeneratorLink">Add Prompt</a>
+                        </div>        
+                        <table border="0" cellspacing="{$theme[\'borderwidth\']}" cellpadding="{$theme[\'tablespace\']}" class="tborder">
+                            <tr>
+                                <td class="thead" colspan="4"><strong>Prompts</strong></td>
+                            </tr>
+                            {$promptGenerator_table_content}
+                        </table> 
+                    </td>
+                </tr>
+            </table>
+            {$footer}
+        </body>
+    </html>';
+
     $templateArray = array(
-        'reply' => $replyHTML
+        'reply' => $replyHTML,
+        'navlink' => $navlinkHTML,
+        'modcp_content' => $modcpContentHTML
         );
 
     $group = array(
@@ -263,7 +307,7 @@ function promptGenerator_reply(&$post)
         // Generate button handling JavaScript on the fly
         $js = '
         <script type="text/javascript">
-        let promptGenerator = (function(){
+            let promptGenerator = (function(){
             let self = this;
             let prompts = [];';
 
@@ -273,20 +317,227 @@ function promptGenerator_reply(&$post)
                 $js .= 'prompts.push("' . $prompt . '");';
             }
 
-            $js .=  'this.handlePromptGeneratorClick = function(){
-                if (prompts.length > 0){
-                    const i = prompts[Math.floor(Math.random() * prompts.length)];
-                    document.getElementById("promptGenerator_output").innerHTML = i;   
-                } else {
-                        // This should never happen
-                    document.getElementById("promptGenerator_output").innerHTML = "No prompts exist yet! Let an admin know that you need inspiration.";
+            $js .=  
+                'this.handlePromptGeneratorClick = function(){
+                    if (prompts.length > 0){
+                        const i = prompts[Math.floor(Math.random() * prompts.length)];
+                        document.getElementById("promptGenerator_output").innerHTML = i;   
+                    } else {
+                            // This should never happen
+                        document.getElementById("promptGenerator_output").innerHTML = "No prompts exist yet! Let an admin know that you need inspiration.";
+                    }
+                }
+                return self;
+                })();
+            </script>';
+
+        echo htmlspecialchars_decode($js, ENT_NOQUOTES);
+        $promptGenerator_reply = eval($templates->render('promptGenerator_reply'));
+    }
+}
+
+function promptGenerator_modcp_link() {
+    global $mybb, $templates, $promptGenerator_navlink;
+    global $nav_edittags;
+
+    $promptGenerator_navlink = eval($templates->render('promptGenerator_navlink'));
+}
+
+
+$plugins->add_hook('modcp_start', 'promptGenerator_modcp');
+function promptGenerator_modcp() 
+{
+    global $mybb, $lang, $db, $page, $templates, $theme;
+
+    global $header, $headerinclude, $modcp_nav, $footer;
+
+    if ($mybb->get_input('action') == 'promptGenerator')
+    {
+        $table = '';
+        $do = '';
+        if ($mybb->get_input('do')){
+            $do = strtolower($mybb->get_input('do'));
+        }
+
+        if ($do == 'edit' && $mybb->get_input('pid'))
+        {
+            $pid = $mybb->get_input('pid');
+            if ($mybb->request_method == 'post')
+            {
+                if(!trim($mybb->input['prompt']))
+                {
+                    $error = $lang->promptGenerator_error_missing_title;
+                }
+                else
+                {
+                    // trim excess whitespace
+                    $p = trim($mybb->input['prompt']);
+
+                    // replace newlines with spaces
+                    $p = trim(preg_replace('/\s\s+/', ' ', $p));
+
+                    if (strlen($p) > 2048){
+                        $error = $lang->promptGenerator_error_too_long;
+                    }
+
+                    if(!$error)
+                    {
+                        $db->update_query("prompt_generator", array("prompt"=>$p), "pid='{$mybb->input['pid']}'");
+                    }
+                    
+                    header("Location: /modcp.php?action=promptGenerator");
                 }
             }
-            return self;
-        })();
-</script>';
+            else {
+                $query = $db->simple_select("prompt_generator", "*", "pid='{$pid}'");
+                $prompt = $db->fetch_array($query);
 
-echo htmlspecialchars_decode($js, ENT_NOQUOTES);
-$promptGenerator_reply = eval($templates->render('promptGenerator_reply'));
-}
+                if ($prompt['pid'])
+                {
+                    $table .= 
+                    '<tr><td class="first" colspan="4">
+                        <form action="modcp.php?action=promptGenerator&amp;do=edit&amp;pid='. $pid .'" method="POST">
+                            <label for="prompt">Prompt</label><br/>
+                            <textarea 
+                                id="promptGenerator_prompt" 
+                                name="prompt" 
+                                rows="5" cols="125" 
+                                maxlength="2048" required>' . $prompt['prompt'] . '</textarea>
+                            <br/>
+                            <input type="submit" value="Edit Prompt"/>
+                        </form>
+                    </td></tr>';
+                }
+                else
+                {
+                    header("Location: /modcp.php?action=promptGenerator");
+                }
+                
+            }
+        }
+        else if ($do == 'delete' && $mybb->get_input('pid'))
+        {
+            $pid = $mybb->get_input('pid');
+            if ($mybb->request_method == 'post')
+            {
+                $query = $db->simple_select("prompt_generator", "*", "pid='{$mybb->input['pid']}'");
+                $prompt = $db->fetch_array($query);
+
+                // Does the prompt not exist?
+                if($prompt['pid'])
+                {
+                    $db->delete_query('prompt_generator', "pid='{$mybb->input['pid']}'");
+                }
+            
+                header("Location: /modcp.php?action=promptGenerator");  
+            }
+            else
+            {
+                $table .= '
+                <tr>
+                    <td class="first promptGenerator_confirm">Are you sure that you want to delete this prompt?</td>
+                </tr>
+                <tr>
+                    <td class="first">
+                        <form action="modcp.php?action=promptGenerator&amp;do=delete&amp;pid=' . $pid . '" method="POST">
+                            <input type="submit" value="Delete Prompt"/>
+                        </form>
+                    </td>
+                    <td>
+                        <form action="modcp.php" method="GET">
+                            <input type="hidden" name="action" value="promptGenerator"/>
+                            <input type="submit" value="Go Back"/>
+                        </form>
+                    </td>
+                </tr>
+                ';
+            }
+            
+        }
+        else if ($do == 'create'){
+            if($mybb->request_method == 'post')
+            {
+                if(!trim($mybb->input['prompt']))
+                {
+                    $error = $lang->promptGenerator_error_missing_title;
+                }
+                else
+                {
+                    // trim excess whitespace
+                    $p = trim($mybb->input['prompt']);
+
+                    // replace newlines with spaces
+                    $p = trim(preg_replace('/\s\s+/', ' ', $p));
+
+                    if (strlen($p) > 2048){
+                        $error = $lang->promptGenerator_error_too_long;
+                    }
+                }
+
+                if (!$error)
+                {
+                    $insert_array = array(
+                        "prompt" => $db->escape_string($p)
+                    );
+
+                    $pid = $db->insert_query("prompt_generator", $insert_array);
+
+                    $table .= '
+                    <tr>
+                        <td class="first promptGenerator_success">Prompt successfully created!</td>
+                    </tr>
+                    ';
+                }
+                else
+                {
+                    $table .= 
+                    '<tr>
+                        <td class="first promptGenerator_error">' . $error . '</td>
+                    </tr>';
+                }
+            }
+            
+            $table .= 
+            '<tr><td class="first" colspan="4">
+                <form action="modcp.php?action=promptGenerator&amp;do=create" method="POST">
+                    <label for="prompt">Prompt</label><br/>
+                    <textarea id="promptGenerator_prompt" name="prompt" rows="5" cols="125" maxlength="2048" required></textarea>
+                    <br/>
+                    <input type="submit" value="Add Prompt"/>
+                </form>
+            </td></tr>';
+            
+        }
+        else
+        {
+            $query = $db->simple_select('prompt_generator', '*', '', array('order_by' => 'pid', 'order_dir' => 'DESC'));
+
+            if($db->num_rows($query))
+            {
+                while($row = $db->fetch_array($query))
+                {
+                    $table .= '<tr><td class="first" colspan="2">'. $row['prompt'] .'</td>';
+
+                    $pid = $row['pid'];
+
+                    $editLink = '<a href="modcp.php?action=promptGenerator&amp;do=edit&amp;pid=' . $pid . '">Edit</a>';
+                    $deleteLink = '<a href="modcp.php?action=promptGenerator&amp;do=delete&amp;pid=' . $pid . '">Delete</a>';
+
+                    $table .= '<td class="alt_col">' . $editLink . '</td>';
+                    $table .= '<td class="last">' . $deleteLink . '</td></tr>';
+                }
+            } 
+            else 
+            {
+                $table .= '<tr><td>There aren\'t any prompts yet!</td></tr>';
+            }
+        }
+        
+        $promptGenerator_table_content = $table;
+
+        add_breadcrumb($lang->nav_modcp, "modcp.php");
+
+        eval("\$promptGenerator_modcp_content = \"".$templates->get("promptGenerator_modcp_content")."\";");
+        output_page($promptGenerator_modcp_content);
+    }
 }
